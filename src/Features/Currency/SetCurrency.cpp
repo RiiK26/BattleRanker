@@ -3,6 +3,7 @@
 #include "../../Modules/Hooks/Hooks.hpp"
 #include "../../Modules/Hooks/Signatures.hpp"
 #include "../../Modules/Menu/Menu.hpp"
+#include "../../Modules/Utils/MonoUtils.hpp"
 
 namespace Features
 {
@@ -10,6 +11,7 @@ namespace Features
   {
     void* g_globalData    = nullptr;
     void* g_RPGPlayerData = nullptr;
+    void* g_GDPVPScript   = nullptr;
 
     int64_t (*Orig_RPGPlayerData_get_goldAmount)(void* this_ptr);
     int64_t Hook_RPGPlayerData_get_goldAmount(void* this_ptr)
@@ -22,7 +24,15 @@ namespace Features
     int Hook_globalData_get_PickupSkillTicketCount(void* this_ptr)
     {
       g_globalData = this_ptr;
+      ProcessRequests();
       return Orig_globalData_get_PickupSkillTicketCount(this_ptr);
+    }
+
+    int (*Orig_GDPVPScript_get_PvpTicket)(void* this_ptr);
+    int Hook_GDPVPScript_get_PvpTicket(void* this_ptr)
+    {
+      g_GDPVPScript = this_ptr;
+      return Orig_GDPVPScript_get_PvpTicket(this_ptr);
     }
 
     void ProcessRequests()
@@ -114,6 +124,30 @@ namespace Features
           Menu::Config.bRequestSetSkillDice = false;
           ((FuncInt) Signatures::globalData_set_SkillDiceCount)(g_globalData, Menu::Config.iSetSkillDiceValue);
         }
+        if (Menu::Config.bRequestSetLumino) {
+          Menu::Config.bRequestSetLumino = false;
+          ((FuncInt) Signatures::globalData_set_EnhanceStoneCount)(g_globalData, Menu::Config.iSetLuminoValue);
+        }
+        if (Menu::Config.bRequestSetQuantumCube) {
+          Menu::Config.bRequestSetQuantumCube = false;
+          ((FuncInt) Signatures::globalData_set_TransStoneCount)(g_globalData, Menu::Config.iSetQuantumCubeValue);
+        }
+        if (Menu::Config.bRequestSetQuantumRing) {
+          Menu::Config.bRequestSetQuantumRing = false;
+          ((FuncInt) Signatures::globalData_set_AvataSkinTrancerCount)(g_globalData, Menu::Config.iSetQuantumRingValue);
+        }
+        if (Menu::Config.bRequestSetPolyFiber) {
+          Menu::Config.bRequestSetPolyFiber = false;
+          ((FuncInt) Signatures::globalData_set_AvataSkinEnhancerCount)(g_globalData, Menu::Config.iSetPolyFiberValue);
+        }
+        if (Menu::Config.bRequestSetSoulStone) {
+          Menu::Config.bRequestSetSoulStone = false;
+          typedef void (*FuncSetSoulStone)(void*, int);
+          FuncSetSoulStone SetSoulStone =
+            (FuncSetSoulStone) mono::get_method("Assembly-CSharp", "", "globalData", "set_SoulStoneCount", 1);
+          if (SetSoulStone)
+            SetSoulStone(g_globalData, Menu::Config.iSetSoulStoneValue);
+        }
         if (Menu::Config.bRequestSetKeys) {
           Menu::Config.bRequestSetKeys = false;
           typedef void (*FuncSetKey)(void*, int, int);
@@ -121,6 +155,13 @@ namespace Features
           for (int i = 0; i < 20; i++) {
             setKey(g_globalData, i, Menu::Config.iSetKeysValue);
           }
+        }
+      }
+
+      if (g_GDPVPScript) {
+        if (Menu::Config.bRequestSetArenaTicket) {
+          Menu::Config.bRequestSetArenaTicket = false;
+          ((FuncInt) Signatures::GDPVPScript_set_PvpTicket)(g_GDPVPScript, Menu::Config.iSetArenaTicketValue);
         }
       }
 
@@ -136,6 +177,10 @@ namespace Features
       HOOK_SIGNATURE(
         "globalData::get_PickupSkillTicketCount", Signatures::globalData_get_PickupSkillTicketCount,
         Hook_globalData_get_PickupSkillTicketCount, Orig_globalData_get_PickupSkillTicketCount
+      );
+      HOOK_SIGNATURE(
+        "GDPVPScript::get_PvpTicket", Signatures::GDPVPScript_get_PvpTicket, Hook_GDPVPScript_get_PvpTicket,
+        Orig_GDPVPScript_get_PvpTicket
       );
     }
 

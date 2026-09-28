@@ -3,11 +3,20 @@
 #include "../../Modules/Hooks/Hooks.hpp"
 #include "../../Modules/Hooks/Signatures.hpp"
 #include "../../Modules/Menu/Menu.hpp"
+#include "../../Modules/Utils/MonoUtils.hpp"
 
 namespace Features
 {
   namespace InfiniteCurrency
   {
+    int (*Orig_globalData_get_SoulStoneCount)(void* this_ptr);
+    int Hook_globalData_get_SoulStoneCount(void* this_ptr)
+    {
+      if (Menu::Config.bInfiniteCurrency)
+        return 999999999;
+      return Orig_globalData_get_SoulStoneCount(this_ptr);
+    }
+
     int64_t (*Orig_RPGPlayerData_get_goldAmount)(void* this_ptr);
     void (*Orig_RPGPlayerData_set_goldAmount)(void* this_ptr, int64_t value);
     void Hook_RPGPlayerData_set_goldAmount(void* this_ptr, int64_t value)
@@ -226,6 +235,12 @@ namespace Features
 
     void Initialize()
     {
+      void* ptr_SoulStoneCount = mono::get_method("Assembly-CSharp", "", "globalData", "get_SoulStoneCount", 0);
+      HOOK_SIGNATURE(
+        "globalData::get_SoulStoneCount", ptr_SoulStoneCount, Hook_globalData_get_SoulStoneCount,
+        Orig_globalData_get_SoulStoneCount
+      );
+
       HOOK_SIGNATURE( // everyone know what is this called
         "RPGPlayerData::set_goldAmount", Signatures::RPGPlayerData_set_goldAmount, Hook_RPGPlayerData_set_goldAmount,
         Orig_RPGPlayerData_set_goldAmount

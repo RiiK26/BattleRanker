@@ -33,6 +33,7 @@ namespace mono
     const std::string& method_name,
     int                param_count
   );
+  void dump_class_methods(const std::string& assembly_name, const std::string& name_space, const std::string& class_name);
 }  // namespace mono
 
 #endif  // MONO_UTILS_H

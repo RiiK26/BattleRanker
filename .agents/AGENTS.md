@@ -74,7 +74,19 @@ namespace Features
 - **Ruby** = Cryptobit
 - **Jewel** = Diamond
 - **Option Dice** = Lucky Dice
+- **Soul Stone** = `SoulStoneCount` (managed in `globalData`). Required for Character Awakening, from Hunt Skeleton.
+- **Quantum Cube** = `TransStoneCount` (managed in `globalData`). Can transcend Weapon.
+- **Lumino** = `EnhanceStoneCount` (managed in `globalData`). Can enhance Weapon, from Dungeon Kings Garden.
+- **Poly Fiber** = `AvataSkinEnhancerCount` (managed in `globalData`).
+- **Quantum Ring** = `AvataSkinTrancerCount` (managed in `globalData`).
+- **Arena Ticket** = `PvpTicket` (managed in `GDPVPScript`, which is `PVPData` inside `globalData`).
 - **Dungeon Keys**: Indexed 0-19, managed via `GetDunKeyCount(this_ptr, idx)` and `SetDunKeyCount(this_ptr, idx, val)`.
+
+### Gacha & Summon Mechanics
+Summoning logic is managed primarily by `GearBoxScript`. Randomness is calculated per pull using these methods:
+- **Gear/Accessory/Pet Level**: Uses `GetRandomPickLv(int pType, int pickLevel)` returning an int 1-20.
+- **Skill Grade**: Uses `GetActualSkillGrade(bool isPickup)` returning `RPGSkillV3Grade` (Legend = 3).
+- **Skin Tier**: Handled by `SubActualSkinPull(RPGAvataPartV2 pPart, RPGAvataGrade pGrade, List<InvenCeremObject> pCeremList)`. Can be hooked to override the grade (Head/Weapon Max=S(1), Pet Max=SS(2), Suit Max=SSS(3)).
 
 ### Advanced Patterns
 

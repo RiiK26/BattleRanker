@@ -35,6 +35,18 @@ namespace Signatures
   extern void* globalData_get_SubJMileage;         // CP
   extern void* globalData_set_SubJMileage;
 
+  extern void* globalData_get_EnhanceStoneCount;  // Lumino
+  extern void* globalData_set_EnhanceStoneCount;
+  extern void* globalData_get_TransStoneCount;    // Quantum Cube
+  extern void* globalData_set_TransStoneCount;
+
+  extern void* GDPVPScript_get_PvpTicket;              // Arena Ticket
+  extern void* GDPVPScript_set_PvpTicket;
+  extern void* globalData_get_AvataSkinTrancerCount;   // Quantum Ring
+  extern void* globalData_set_AvataSkinTrancerCount;
+  extern void* globalData_get_AvataSkinEnhancerCount;  // Poly Fiber
+  extern void* globalData_set_AvataSkinEnhancerCount;
+
   extern void* RPGPlayerData_get_TreeStoneAmount;
   extern void* RPGPlayerData_set_TreeStoneAmount;
   extern void* RPGPlayerData_get_FireStoneAmount;
@@ -66,6 +78,19 @@ namespace Signatures
   extern void* ACTk_SpeedHackDetector_StartDetectionAutomatically;
   extern void* ACTk_TimeCheatingDetector_StartDetectionAutomatically;
   extern void* ACTk_WallHackDetector_StartDetectionAutomatically;
+
+  extern void* MonsterV2Script_Update;
+  extern void* MonsterV2Script_InstantDeath;
+  extern void* MonsterV2Script_get_IsDead;
+  extern void* MonsterV2Script_get_IsPuppet;
+  extern void* MonsterV2Script_get_IsTargetable;
+
+  extern void* GDOptionScript_PullOneOption;
+  extern void* RPGOptionItem_set_OptionGrade;
+
+  extern void* GearBoxScript_GetRandomPickLv;
+  extern void* GearBoxScript_GetActualSkillGrade;
+  extern void* GearBoxScript_SubActualSkinPull;
 
   void Resolve();
 }  // namespace Signatures

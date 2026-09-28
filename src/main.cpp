@@ -27,21 +27,23 @@ void MainThread(HMODULE hModule)
   // Wait for graphics APIs to be loaded (Timeout after 30 seconds)
   int  retries     = 300;
   bool dxgiLoaded  = false;
+  bool d3d11Loaded = false;
   bool d3d12Loaded = false;
   while (retries > 0) {
     dxgiLoaded  = GetModuleHandleA("dxgi.dll") != nullptr;
+    d3d11Loaded = GetModuleHandleA("d3d11.dll") != nullptr;
     d3d12Loaded = GetModuleHandleA("d3d12.dll") != nullptr;
-    if (dxgiLoaded && d3d12Loaded)
+    if (dxgiLoaded && (d3d11Loaded || d3d12Loaded))
       break;
     Sleep(100);
     retries--;
   }
 
-  if (!dxgiLoaded || !d3d12Loaded) {
+  if (!dxgiLoaded || (!d3d11Loaded && !d3d12Loaded)) {
     char errorMsg[256];
     sprintf(
-      errorMsg, "Graphics API wait timed out!\ndxgi.dll loaded: %s\nd3d12.dll loaded: %s", dxgiLoaded ? "Yes" : "No",
-      d3d12Loaded ? "Yes" : "No"
+      errorMsg, "Graphics API wait timed out!\ndxgi.dll loaded: %s\nd3d11.dll loaded: %s\nd3d12.dll loaded: %s", dxgiLoaded ? "Yes" : "No",
+      d3d11Loaded ? "Yes" : "No", d3d12Loaded ? "Yes" : "No"
     );
     {
       std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);

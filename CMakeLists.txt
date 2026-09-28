@@ -28,7 +28,6 @@ add_library(${PROJECT_NAME} MODULE
     src/Modules/Utils/MonoUtils.cpp
     src/Features/Player/GodMode.cpp
     src/Features/Player/Upgrades.cpp
-    src/Features/Player/DetailedStats.cpp
     src/Features/Currency/InfiniteCurrency.cpp
     src/Features/Currency/SetCurrency.cpp
     src/Features/Misc/BypassACTk.cpp
@@ -39,6 +38,7 @@ add_library(${PROJECT_NAME} MODULE
     src/Modules/Vendor/imgui/imgui_tables.cpp
     src/Modules/Vendor/imgui/imgui_widgets.cpp
     src/Modules/Vendor/imgui/backends/imgui_impl_win32.cpp
+    src/Modules/Vendor/imgui/backends/imgui_impl_dx11.cpp
     src/Modules/Vendor/imgui/backends/imgui_impl_dx12.cpp
 
     # MinHook sources
@@ -58,7 +58,7 @@ add_compile_definitions(
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE src/Modules/Utils src/Modules/Menu src/Modules/Hooks src/Modules/Vendor/minhook/include src/Modules/Vendor/imgui src/Modules/Vendor/imgui/backends)
-target_link_libraries(${PROJECT_NAME} PRIVATE d3d12 dxgi dwmapi d3dcompiler)
+target_link_libraries(${PROJECT_NAME} PRIVATE d3d11 d3d12 dxgi dwmapi d3dcompiler)
 
 # Build the injector separately
 add_executable(injector src/injector.cpp)

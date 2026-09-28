@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <set>
 #include "MonoUtils.hpp"
 
 namespace mono
@@ -14,6 +15,43 @@ namespace mono
   void* (*mono_class_get_methods)(MonoClass* klass, void** iter);
   const char* (*mono_method_get_name)(MonoMethod* method);
   void* (*mono_compile_method)(MonoMethod* method);
+
+  void
+  dump_class_methods(const std::string& assembly_name, const std::string& name_space, const std::string& class_name)
+  {
+    MonoDomain* domain = mono_get_root_domain();
+    if (!domain)
+      return;
+    MonoAssembly* assembly = mono_domain_assembly_open(domain, assembly_name.c_str());
+    if (!assembly) {
+      std::string dll_name = assembly_name + ".dll";
+      assembly             = mono_domain_assembly_open(domain, dll_name.c_str());
+      if (!assembly) {
+        std::string path_name = "Battle Ranker_Data/Managed/" + dll_name;
+        assembly              = mono_domain_assembly_open(domain, path_name.c_str());
+        if (!assembly)
+          return;
+      }
+    }
+    MonoImage* image = mono_assembly_get_image(assembly);
+    if (!image)
+      return;
+    MonoClass* klass = mono_class_from_name(image, name_space.c_str(), class_name.c_str());
+    if (!klass)
+      return;
+
+    std::ofstream logfile("BattleRanker_ClassDump_" + class_name + ".txt", std::ios::out);
+    if (!logfile.is_open())
+      return;
+
+    logfile << "Methods for " << class_name << ":\n";
+    void*       iter = nullptr;
+    MonoMethod* method;
+    while ((method = (MonoMethod*) mono_class_get_methods(klass, &iter)) != nullptr) {
+      logfile << mono_method_get_name(method) << "\n";
+    }
+    logfile.close();
+  }
 
   bool init()
   {
@@ -60,10 +98,6 @@ namespace mono
 
     MonoAssembly* assembly = mono_domain_assembly_open(domain, assembly_name.c_str());
     if (!assembly) {
-      std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-      if (logfile.is_open())
-        logfile << "get_method: mono_domain_assembly_open failed for " << assembly_name << std::endl;
-
       // Fallback: try adding .dll
       std::string dll_name = assembly_name + ".dll";
       assembly             = mono_domain_assembly_open(domain, dll_name.c_str());
@@ -72,8 +106,15 @@ namespace mono
         std::string path_name = "Battle Ranker_Data/Managed/" + dll_name;
         assembly              = mono_domain_assembly_open(domain, path_name.c_str());
         if (!assembly) {
-          if (logfile.is_open())
-            logfile << "get_method: also failed with " << path_name << std::endl;
+          static std::set<std::string> logged_assemblies;
+          if (logged_assemblies.find(assembly_name) == logged_assemblies.end()) {
+            std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
+            if (logfile.is_open()) {
+              logfile << "get_method: mono_domain_assembly_open failed for " << assembly_name << " and all fallbacks."
+                      << std::endl;
+            }
+            logged_assemblies.insert(assembly_name);
+          }
           return nullptr;
         }
       }

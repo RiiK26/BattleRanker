@@ -2,8 +2,8 @@
 #define HOOKS_H
 
 #include <MinHook.h>
-#include <fstream>
-#include <iostream>
+#include <fstream>   // IWYU pragma: keep
+#include <iostream>  // IWYU pragma: keep
 
 #define HOOK_SIGNATURE(Name, SignaturePtr, HookFunc, OrigFunc) \
   { \

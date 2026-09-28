@@ -1,3 +1,4 @@
 # BattleRanker
 
-Too lazy to explain
+## LICENSE
+this projects under [MIT License](license)

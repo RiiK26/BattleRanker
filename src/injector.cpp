@@ -44,10 +44,6 @@ int main(int argc, char* argv[])
   std::string processName = argv[1];
   std::string dllPath     = argv[2];
 
-  // We no longer resolve the absolute path or check if it exists here,
-  // because in Proton/Wine, passing just the DLL name to LoadLibraryA
-  // works better when the DLL is copied directly to the game's directory.
-
   std::cout << "[*] Waiting for process '" << processName << "'...\n";
   DWORD processId = 0;
   while (!processId) {

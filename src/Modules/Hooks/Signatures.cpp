@@ -34,6 +34,18 @@ namespace Signatures
   void* globalData_get_SubJMileage                                = nullptr;
   void* globalData_set_SubJMileage                                = nullptr;
 
+  void* globalData_get_EnhanceStoneCount                          = nullptr;
+  void* globalData_set_EnhanceStoneCount                          = nullptr;
+  void* globalData_get_TransStoneCount                            = nullptr;
+  void* globalData_set_TransStoneCount                            = nullptr;
+
+  void* GDPVPScript_get_PvpTicket                                 = nullptr;
+  void* GDPVPScript_set_PvpTicket                                 = nullptr;
+  void* globalData_get_AvataSkinTrancerCount                      = nullptr;
+  void* globalData_set_AvataSkinTrancerCount                      = nullptr;
+  void* globalData_get_AvataSkinEnhancerCount                     = nullptr;
+  void* globalData_set_AvataSkinEnhancerCount                     = nullptr;
+
   void* RPGPlayerData_get_TreeStoneAmount                         = nullptr;
   void* RPGPlayerData_set_TreeStoneAmount                         = nullptr;
   void* RPGPlayerData_get_FireStoneAmount                         = nullptr;
@@ -64,6 +76,19 @@ namespace Signatures
   void* ACTk_SpeedHackDetector_StartDetectionAutomatically        = nullptr;
   void* ACTk_TimeCheatingDetector_StartDetectionAutomatically     = nullptr;
   void* ACTk_WallHackDetector_StartDetectionAutomatically         = nullptr;
+
+  void* MonsterV2Script_Update                                    = nullptr;
+  void* MonsterV2Script_InstantDeath                              = nullptr;
+  void* MonsterV2Script_get_IsDead                                = nullptr;
+  void* MonsterV2Script_get_IsPuppet                              = nullptr;
+  void* MonsterV2Script_get_IsTargetable                          = nullptr;
+
+  void* GDOptionScript_PullOneOption                              = nullptr;
+  void* RPGOptionItem_set_OptionGrade                             = nullptr;
+
+  void* GearBoxScript_GetRandomPickLv                             = nullptr;
+  void* GearBoxScript_GetActualSkillGrade                         = nullptr;
+  void* GearBoxScript_SubActualSkinPull                           = nullptr;
 
   void Resolve()
   {
@@ -105,6 +130,24 @@ namespace Signatures
       mono::get_method("Assembly-CSharp", "", "globalData", "set_SkillEnhancerCount", 1);
     globalData_get_SubJMileage = mono::get_method("Assembly-CSharp", "", "globalData", "get_SubJMileage", 0);
     globalData_set_SubJMileage = mono::get_method("Assembly-CSharp", "", "globalData", "set_SubJMileage", 1);
+
+    globalData_get_EnhanceStoneCount =
+      mono::get_method("Assembly-CSharp", "", "globalData", "get_EnhanceStoneCount", 0);
+    globalData_set_EnhanceStoneCount =
+      mono::get_method("Assembly-CSharp", "", "globalData", "set_EnhanceStoneCount", 1);
+    globalData_get_TransStoneCount = mono::get_method("Assembly-CSharp", "", "globalData", "get_TransStoneCount", 0);
+    globalData_set_TransStoneCount = mono::get_method("Assembly-CSharp", "", "globalData", "set_TransStoneCount", 1);
+
+    GDPVPScript_get_PvpTicket      = mono::get_method("Assembly-CSharp", "", "GDPVPScript", "get_PvpTicket", 0);
+    GDPVPScript_set_PvpTicket      = mono::get_method("Assembly-CSharp", "", "GDPVPScript", "set_PvpTicket", 1);
+    globalData_get_AvataSkinTrancerCount =
+      mono::get_method("Assembly-CSharp", "", "globalData", "get_AvataSkinTrancerCount", 0);
+    globalData_set_AvataSkinTrancerCount =
+      mono::get_method("Assembly-CSharp", "", "globalData", "set_AvataSkinTrancerCount", 1);
+    globalData_get_AvataSkinEnhancerCount =
+      mono::get_method("Assembly-CSharp", "", "globalData", "get_AvataSkinEnhancerCount", 0);
+    globalData_set_AvataSkinEnhancerCount =
+      mono::get_method("Assembly-CSharp", "", "globalData", "set_AvataSkinEnhancerCount", 1);
 
     RPGPlayerData_get_TreeStoneAmount =
       mono::get_method("Assembly-CSharp", "", "RPGPlayerData", "get_TreeStoneAmount", 0);
@@ -156,5 +199,19 @@ namespace Signatures
       mono::get_method(actk_dll, actk_ns, "TimeCheatingDetector", method, 0);
     ACTk_WallHackDetector_StartDetectionAutomatically =
       mono::get_method(actk_dll, actk_ns, "WallHackDetector", method, 0);
+
+    MonsterV2Script_Update        = mono::get_method("Assembly-CSharp", "", "MonsterV2Script", "Update", 0);
+    MonsterV2Script_InstantDeath  = mono::get_method("Assembly-CSharp", "", "MonsterV2Script", "InstantDeath", 0);
+    MonsterV2Script_get_IsDead    = mono::get_method("Assembly-CSharp", "", "MonsterV2Script", "get_IsDead", 0);
+    MonsterV2Script_get_IsPuppet  = mono::get_method("Assembly-CSharp", "", "MonsterV2Script", "get_IsPuppet", 0);
+    MonsterV2Script_get_IsTargetable = mono::get_method("Assembly-CSharp", "", "MonsterV2Script", "get_IsTargetable", 0);
+
+    GDOptionScript_PullOneOption  = mono::get_method("Assembly-CSharp", "", "GDOptionScript", "PullOneOption", 2);
+    RPGOptionItem_set_OptionGrade = mono::get_method("Assembly-CSharp", "", "RPGOptionItem", "set_OptionGrade", 1);
+
+    GearBoxScript_GetRandomPickLv = mono::get_method("Assembly-CSharp", "", "GearBoxScript", "GetRandomPickLv", 2);
+    GearBoxScript_GetActualSkillGrade =
+      mono::get_method("Assembly-CSharp", "", "GearBoxScript", "GetActualSkillGrade", 1);
+    GearBoxScript_SubActualSkinPull = mono::get_method("Assembly-CSharp", "", "GearBoxScript", "SubActualSkinPull", 3);
   }
 }  // namespace Signatures

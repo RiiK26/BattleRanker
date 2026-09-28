@@ -2,7 +2,10 @@
 #include "Menu.hpp"
 #include <MinHook.h>
 #include "../../Features/Currency/SetCurrency.hpp"
-#include "../../Features/Player/DetailedStats.hpp"
+#include "../../Features/Player/GodMode.hpp"
+
+#include <d3d11.h>
+#include "imgui_impl_dx11.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -26,7 +29,13 @@ namespace Menu
   typedef void(__stdcall* ExecuteCommandLists_t)(
     ID3D12CommandQueue* pCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists
   );
-  ExecuteCommandLists_t oExecuteCommandLists = nullptr;
+  ExecuteCommandLists_t oExecuteCommandLists     = nullptr;
+
+  ID3D11Device*           g_pd3d11Device         = nullptr;
+  ID3D11DeviceContext*    g_pd3d11DeviceContext  = nullptr;
+  ID3D11RenderTargetView* g_mainRenderTargetView = nullptr;
+  bool                    g_IsDX11               = false;
+  bool                    g_IsDX12               = false;
 
   WNDPROC                    oWndProc;
   HWND                       g_hWnd                 = NULL;
@@ -67,62 +76,72 @@ namespace Menu
 
   void CleanupRenderTarget()
   {
-    if (g_mainRenderTargetResource) {
-      for (UINT i = 0; i < g_NumFrames; i++)
-        if (g_mainRenderTargetResource[i]) {
-          g_mainRenderTargetResource[i]->Release();
-          g_mainRenderTargetResource[i] = nullptr;
-        }
-      delete[] g_mainRenderTargetResource;
-      g_mainRenderTargetResource = nullptr;
+    if (g_IsDX11) {
+      if (g_mainRenderTargetView) {
+        g_mainRenderTargetView->Release();
+        g_mainRenderTargetView = nullptr;
+      }
     }
-    if (g_mainRenderTargetDescriptor) {
-      delete[] g_mainRenderTargetDescriptor;
-      g_mainRenderTargetDescriptor = nullptr;
-    }
-    if (g_FrameContexts) {
-      for (UINT i = 0; i < g_NumFrames; i++)
-        if (g_FrameContexts[i].CommandAllocator) {
-          g_FrameContexts[i].CommandAllocator->Release();
-          g_FrameContexts[i].CommandAllocator = nullptr;
-        }
-      delete[] g_FrameContexts;
-      g_FrameContexts = nullptr;
+    else {
+      if (g_mainRenderTargetResource) {
+        for (UINT i = 0; i < g_NumFrames; i++)
+          if (g_mainRenderTargetResource[i]) {
+            g_mainRenderTargetResource[i]->Release();
+            g_mainRenderTargetResource[i] = nullptr;
+          }
+        delete[] g_mainRenderTargetResource;
+        g_mainRenderTargetResource = nullptr;
+      }
+      if (g_mainRenderTargetDescriptor) {
+        delete[] g_mainRenderTargetDescriptor;
+        g_mainRenderTargetDescriptor = nullptr;
+      }
+      if (g_FrameContexts) {
+        for (UINT i = 0; i < g_NumFrames; i++)
+          if (g_FrameContexts[i].CommandAllocator) {
+            g_FrameContexts[i].CommandAllocator->Release();
+            g_FrameContexts[i].CommandAllocator = nullptr;
+          }
+        delete[] g_FrameContexts;
+        g_FrameContexts = nullptr;
+      }
     }
   }
 
   void RenderMenu(IDXGISwapChain* pSwapChain)
   {
-    if (!g_pd3dCommandQueue)
-      return;
-
     if (!g_ImGuiInitialized) {
-      {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-        if (logfile.is_open())
-          logfile << "RenderMenu: Init starting" << std::endl;
-      }
-      if (SUCCEEDED(pSwapChain->GetDevice(IID_PPV_ARGS(&g_pd3dDevice)))) {
-        {
-          std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-          if (logfile.is_open())
-            logfile << "RenderMenu: GetDevice succeeded" << std::endl;
-        }
+      if (SUCCEEDED(pSwapChain->GetDevice(__uuidof(ID3D11Device), (void**) &g_pd3d11Device))) {
+        g_IsDX11 = true;
+        g_pd3d11Device->GetImmediateContext(&g_pd3d11DeviceContext);
 
         DXGI_SWAP_CHAIN_DESC sd;
-        if (FAILED(pSwapChain->GetDesc(&sd))) {
-          {
-            std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-            if (logfile.is_open())
-              logfile << "RenderMenu: GetDesc failed" << std::endl;
-          }
+        pSwapChain->GetDesc(&sd);
+        g_hWnd   = sd.OutputWindow;
+        oWndProc = (WNDPROC) SetWindowLongPtr(g_hWnd, GWLP_WNDPROC, (LONG_PTR) WndProc);
+
+        ImGui::CreateContext();
+        ImGui::StyleColorsDark();
+        ImGui_ImplWin32_Init(g_hWnd);
+        ImGui_ImplDX11_Init(g_pd3d11Device, g_pd3d11DeviceContext);
+
+        ID3D11Texture2D* pBackBuffer = nullptr;
+        pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**) &pBackBuffer);
+        if (pBackBuffer) {
+          g_pd3d11Device->CreateRenderTargetView(pBackBuffer, NULL, &g_mainRenderTargetView);
+          pBackBuffer->Release();
+        }
+
+        g_ImGuiInitialized = true;
+      }
+      else if (SUCCEEDED(pSwapChain->GetDevice(IID_PPV_ARGS(&g_pd3dDevice)))) {
+        g_IsDX12 = true;
+        if (!g_pd3dCommandQueue)
           return;
-        }
-        {
-          std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-          if (logfile.is_open())
-            logfile << "RenderMenu: GetDesc succeeded" << std::endl;
-        }
+
+        DXGI_SWAP_CHAIN_DESC sd;
+        if (FAILED(pSwapChain->GetDesc(&sd)))
+          return;
 
         g_NumFrames                  = sd.BufferCount;
         g_mainRenderTargetResource   = new ID3D12Resource*[g_NumFrames]();
@@ -132,25 +151,14 @@ namespace Menu
         for (UINT i = 0; i < g_NumFrames; i++) {
           pSwapChain->GetBuffer(i, IID_PPV_ARGS(&g_mainRenderTargetResource[i]));
         }
-        {
-          std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-          if (logfile.is_open())
-            logfile << "RenderMenu: GetBuffer loop finished" << std::endl;
-        }
 
         D3D12_DESCRIPTOR_HEAP_DESC rtvdesc = {};
         rtvdesc.Type                       = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
         rtvdesc.NumDescriptors             = g_NumFrames;
         rtvdesc.Flags                      = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
         rtvdesc.NodeMask                   = 1;
-        if (FAILED(g_pd3dDevice->CreateDescriptorHeap(&rtvdesc, IID_PPV_ARGS(&g_pd3dRtvDescHeap)))) {
-          {
-            std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-            if (logfile.is_open())
-              logfile << "RenderMenu: CreateDescriptorHeap (RTV) failed" << std::endl;
-          }
+        if (FAILED(g_pd3dDevice->CreateDescriptorHeap(&rtvdesc, IID_PPV_ARGS(&g_pd3dRtvDescHeap))))
           return;
-        }
 
         SIZE_T rtvDescriptorSize = g_pd3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
         D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = g_pd3dRtvDescHeap->GetCPUDescriptorHandleForHeapStart();
@@ -162,34 +170,18 @@ namespace Menu
             D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_FrameContexts[i].CommandAllocator)
           );
         }
-        {
-          std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-          if (logfile.is_open())
-            logfile << "RenderMenu: CommandAllocators created" << std::endl;
-        }
 
         D3D12_DESCRIPTOR_HEAP_DESC srvdesc = {};
         srvdesc.Type                       = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
         srvdesc.NumDescriptors             = 1;
         srvdesc.Flags                      = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-        if (FAILED(g_pd3dDevice->CreateDescriptorHeap(&srvdesc, IID_PPV_ARGS(&g_pd3dSrvDescHeap)))) {
-          {
-            std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-            if (logfile.is_open())
-              logfile << "RenderMenu: CreateDescriptorHeap (SRV) failed" << std::endl;
-          }
+        if (FAILED(g_pd3dDevice->CreateDescriptorHeap(&srvdesc, IID_PPV_ARGS(&g_pd3dSrvDescHeap))))
           return;
-        }
 
         g_pd3dDevice->CreateCommandList(
           0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_FrameContexts[0].CommandAllocator, nullptr,
           IID_PPV_ARGS(&g_pd3dCommandList)
         );
-        {
-          std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-          if (logfile.is_open())
-            logfile << "RenderMenu: CreateCommandList succeeded" << std::endl;
-        }
 
         g_hWnd   = sd.OutputWindow;
         oWndProc = (WNDPROC) SetWindowLongPtr(g_hWnd, GWLP_WNDPROC, (LONG_PTR) WndProc);
@@ -210,38 +202,34 @@ namespace Menu
         ImGui_ImplDX12_Init(&info);
 
         g_pd3dCommandList->Close();
-        {
-          std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-          if (logfile.is_open())
-            logfile << "RenderMenu: ImGui initialized" << std::endl;
-        }
         g_ImGuiInitialized = true;
       }
     }
 
     if (g_ImGuiInitialized) {
-      IDXGISwapChain3* swapChain3 = nullptr;
-      if (SUCCEEDED(pSwapChain->QueryInterface(__uuidof(IDXGISwapChain3), (void**) &swapChain3))) {
-        g_FrameIndex = swapChain3->GetCurrentBackBufferIndex();
-        swapChain3->Release();
+      if (g_IsDX11) {
+        ImGui_ImplDX11_NewFrame();
+        ImGui_ImplWin32_NewFrame();
+        ImGui::NewFrame();
       }
-      else {
-        // Fallback for older swapchains
-        static UINT fallbackFrameIndex = 0;
-        g_FrameIndex                   = fallbackFrameIndex;
-        fallbackFrameIndex             = (fallbackFrameIndex + 1) % g_NumFrames;
-      }
+      else if (g_IsDX12) {
+        IDXGISwapChain3* swapChain3 = nullptr;
+        if (SUCCEEDED(pSwapChain->QueryInterface(__uuidof(IDXGISwapChain3), (void**) &swapChain3))) {
+          g_FrameIndex = swapChain3->GetCurrentBackBufferIndex();
+          swapChain3->Release();
+        }
+        else {
+          static UINT fallbackFrameIndex = 0;
+          g_FrameIndex                   = fallbackFrameIndex;
+          fallbackFrameIndex             = (fallbackFrameIndex + 1) % g_NumFrames;
+        }
 
-      g_FrameContexts[g_FrameIndex].CommandAllocator->Reset();
-      g_pd3dCommandList->Reset(g_FrameContexts[g_FrameIndex].CommandAllocator, nullptr);
+        g_FrameContexts[g_FrameIndex].CommandAllocator->Reset();
+        g_pd3dCommandList->Reset(g_FrameContexts[g_FrameIndex].CommandAllocator, nullptr);
 
-      ImGui_ImplDX12_NewFrame();
-      ImGui_ImplWin32_NewFrame();
-      ImGui::NewFrame();
-      {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-        if (logfile.is_open())
-          logfile << "RenderMenu: Drawing - NewFrame" << std::endl;
+        ImGui_ImplDX12_NewFrame();
+        ImGui_ImplWin32_NewFrame();
+        ImGui::NewFrame();
       }
 
       Features::SetCurrency::ProcessRequests();
@@ -256,13 +244,33 @@ namespace Menu
         }
 
         if (ImGui::BeginTabBar("Tabs")) {
-          if (ImGui::BeginTabItem("Detailed Stats Editor")) {
-            ImGui::Spacing();
-            Features::DetailedStats::RenderUI();
-            ImGui::Spacing();
-            ImGui::EndTabItem();
-          }
           if (ImGui::BeginTabItem("Player")) {
+            ImGui::Spacing();
+            ImGui::Text("Base Stats & Godmode");
+            if (ImGui::Checkbox("Enable Invincibility", &Config.bGodMode_Invincibility)) {
+              SetLogMessage("Invincibility toggled.");
+            }
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+            ImGui::Text("Override Base Stats");
+            if (ImGui::Checkbox("Max Base Attack", &Config.bGodMode_MaxAtk)) {
+              SetLogMessage("Max Base Attack toggled.");
+            }
+            if (ImGui::Checkbox("Max Base Defense", &Config.bGodMode_MaxDef)) {
+              SetLogMessage("Max Base Defense toggled.");
+            }
+            if (ImGui::Checkbox("Max Base HP", &Config.bGodMode_MaxHP)) {
+              SetLogMessage("Max Base HP toggled.");
+            }
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            Features::GodMode::RenderUI();
+
+            ImGui::Spacing();
+            ImGui::Separator();
             ImGui::Spacing();
             ImGui::Text("Detailed Stats Upgrades");
 
@@ -446,6 +454,30 @@ namespace Menu
             ImGui::SameLine(150);
             ImGui::InputInt("##SetLightCore", &Config.iSetLightCoreValue);
 
+            // Arena Ticket
+            if (ImGui::Button("Set##ArenaTicket")) {
+              Config.bRequestSetArenaTicket = true;
+              SetLogMessage("Set Arena Ticket requested.");
+            }
+            ImGui::SameLine(150);
+            ImGui::InputInt("##SetArenaTicket", &Config.iSetArenaTicketValue);
+
+            // Quantum Ring
+            if (ImGui::Button("Set##QuantumRing")) {
+              Config.bRequestSetQuantumRing = true;
+              SetLogMessage("Set Quantum Ring requested.");
+            }
+            ImGui::SameLine(150);
+            ImGui::InputInt("##SetQuantumRing", &Config.iSetQuantumRingValue);
+
+            // Poly Fiber
+            if (ImGui::Button("Set##PolyFiber")) {
+              Config.bRequestSetPolyFiber = true;
+              SetLogMessage("Set Poly Fiber requested.");
+            }
+            ImGui::SameLine(150);
+            ImGui::InputInt("##SetPolyFiber", &Config.iSetPolyFiberValue);
+
             // Dungeon Keys
             if (ImGui::Button("Set##AllKeys")) {
               Config.bRequestSetKeys = true;
@@ -457,24 +489,24 @@ namespace Menu
             ImGui::Spacing();
             ImGui::EndTabItem();
           }
-          if (ImGui::BeginTabItem("Combat")) {
+          if (ImGui::BeginTabItem("Misc")) {
             ImGui::Spacing();
-            ImGui::Text("Base Stats & Godmode");
-            if (ImGui::Checkbox("Enable Invincibility", &Config.bGodMode_Invincibility)) {
-              SetLogMessage("Invincibility toggled.");
+            ImGui::Text("Summon & Options");
+            if (ImGui::Checkbox("Max Gacha Rolls", &Config.bMaxGachaRolls)) {
+              SetLogMessage("Max Gacha Rolls toggled.");
             }
+            if (ImGui::Checkbox("Max Option Roll (Always Max)", &Config.bMaxOptionRoll)) {
+              SetLogMessage("Max Option Roll toggled.");
+            }
+            ImGui::SameLine();
+            ImGui::InputInt("##OptionRollTier", &Config.iMaxOptionRollTier);
+            if (Config.iMaxOptionRollTier < 0)
+              Config.iMaxOptionRollTier = 0;
             ImGui::Spacing();
             ImGui::Separator();
             ImGui::Spacing();
-            ImGui::Text("Override Base Stats");
-            if (ImGui::Checkbox("Max Base Attack", &Config.bGodMode_MaxAtk)) {
-              SetLogMessage("Max Base Attack toggled.");
-            }
-            if (ImGui::Checkbox("Max Base Defense", &Config.bGodMode_MaxDef)) {
-              SetLogMessage("Max Base Defense toggled.");
-            }
-            if (ImGui::Checkbox("Max Base HP", &Config.bGodMode_MaxHP)) {
-              SetLogMessage("Max Base HP toggled.");
+            if (ImGui::Checkbox("Aura Kill (Instant Death)", &Config.bAuraKill)) {
+              SetLogMessage("Aura Kill toggled.");
             }
             ImGui::Spacing();
             ImGui::EndTabItem();
@@ -486,8 +518,7 @@ namespace Menu
         ImGui::Separator();
         ImGui::Spacing();
 
-        if (ImGui::Button("SAVE CONFIG", ImVec2(-1, 35))) {
-          // simulate save config
+        if (ImGui::Button("SAVE CONFIG", ImVec2(-1, 30))) {
           SetLogMessage("Saved config successfully!");
         }
 
@@ -507,70 +538,35 @@ namespace Menu
       }
 
       ImGui::Render();
-      {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-        if (logfile.is_open())
-          logfile << "RenderMenu: Drawing - Rendered" << std::endl;
+      if (g_IsDX11) {
+        g_pd3d11DeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, NULL);
+        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
       }
+      else if (g_IsDX12) {
+        D3D12_RESOURCE_BARRIER barrier = {};
+        barrier.Type                   = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Flags                  = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        barrier.Transition.pResource   = g_mainRenderTargetResource[g_FrameIndex];
+        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+        barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        g_pd3dCommandList->ResourceBarrier(1, &barrier);
 
-      D3D12_RESOURCE_BARRIER barrier = {};
-      barrier.Type                   = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-      barrier.Flags                  = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-      barrier.Transition.pResource   = g_mainRenderTargetResource[g_FrameIndex];
-      barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-      barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-      barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RENDER_TARGET;
-      {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-        if (logfile.is_open())
-          logfile << "RenderMenu: Drawing - Before ResourceBarrier" << std::endl;
-      }
-      g_pd3dCommandList->ResourceBarrier(1, &barrier);
+        g_pd3dCommandList->OMSetRenderTargets(1, &g_mainRenderTargetDescriptor[g_FrameIndex], FALSE, nullptr);
 
-      {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-        if (logfile.is_open())
-          logfile << "RenderMenu: Drawing - Before OMSetRenderTargets" << std::endl;
-      }
-      g_pd3dCommandList->OMSetRenderTargets(1, &g_mainRenderTargetDescriptor[g_FrameIndex], FALSE, nullptr);
+        ID3D12DescriptorHeap* descriptorHeaps[] = {g_pd3dSrvDescHeap};
+        g_pd3dCommandList->SetDescriptorHeaps(1, descriptorHeaps);
 
-      {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-        if (logfile.is_open())
-          logfile << "RenderMenu: Drawing - Before SetDescriptorHeaps" << std::endl;
-      }
-      ID3D12DescriptorHeap* descriptorHeaps[] = {g_pd3dSrvDescHeap};
-      g_pd3dCommandList->SetDescriptorHeaps(1, descriptorHeaps);
+        ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), g_pd3dCommandList);
 
-      {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-        if (logfile.is_open())
-          logfile << "RenderMenu: Drawing - Before RenderDrawData" << std::endl;
-      }
-      ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), g_pd3dCommandList);
-      {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-        if (logfile.is_open())
-          logfile << "RenderMenu: Drawing - DrawData submitted" << std::endl;
-      }
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_PRESENT;
+        g_pd3dCommandList->ResourceBarrier(1, &barrier);
+        g_pd3dCommandList->Close();
 
-      barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-      barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_PRESENT;
-      g_pd3dCommandList->ResourceBarrier(1, &barrier);
-      g_pd3dCommandList->Close();
-      {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-        if (logfile.is_open())
-          logfile << "RenderMenu: Drawing - CommandList Closed" << std::endl;
-      }
-
-      if (g_pd3dCommandQueue) {
-        {
-          std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-          if (logfile.is_open())
-            logfile << "RenderMenu: Drawing - Executing command lists" << std::endl;
+        if (g_pd3dCommandQueue) {
+          g_pd3dCommandQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*) &g_pd3dCommandList);
         }
-        g_pd3dCommandQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*) &g_pd3dCommandList);
       }
     }
   }
@@ -653,7 +649,7 @@ namespace Menu
     windowClass.hCursor       = NULL;
     windowClass.hbrBackground = NULL;
     windowClass.lpszMenuName  = NULL;
-    windowClass.lpszClassName = "DummyClassDX12";
+    windowClass.lpszClassName = "DummyClassDX";
     windowClass.hIconSm       = NULL;
 
     ::RegisterClassEx(&windowClass);
@@ -662,158 +658,119 @@ namespace Menu
       NULL
     );
 
-    HMODULE libDXGI  = GetModuleHandle("dxgi.dll");
-    HMODULE libD3D12 = GetModuleHandle("d3d12.dll");
-    if (!libDXGI || !libD3D12) {
+    HMODULE libD3D11 = GetModuleHandle("d3d11.dll");
+    if (!libD3D11)
+      libD3D11 = LoadLibrary("d3d11.dll");
+
+    if (!libD3D11) {
       ::DestroyWindow(window);
       ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
-      {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-        if (logfile.is_open())
-          logfile << "Menu::init failed: dxgi.dll or d3d12.dll not found" << std::endl;
-      }
       return false;
     }
 
-    auto CreateDXGIFactory1_Func = (decltype(&CreateDXGIFactory1)) GetProcAddress(libDXGI, "CreateDXGIFactory1");
-    auto D3D12CreateDevice_Func  = (decltype(&::D3D12CreateDevice)) GetProcAddress(libD3D12, "D3D12CreateDevice");
-
-    if (!CreateDXGIFactory1_Func || !D3D12CreateDevice_Func) {
-      {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-        if (logfile.is_open())
-          logfile << "Menu::init failed: missing DXGI or D3D12 exports" << std::endl;
-      }
+    auto D3D11CreateDeviceAndSwapChain_Func =
+      (decltype(&D3D11CreateDeviceAndSwapChain)) GetProcAddress(libD3D11, "D3D11CreateDeviceAndSwapChain");
+    if (!D3D11CreateDeviceAndSwapChain_Func) {
       return false;
     }
 
-    IDXGIFactory4* factory;
-    if (FAILED(CreateDXGIFactory1_Func(__uuidof(IDXGIFactory4), (void**) &factory))) {
-      {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-        if (logfile.is_open())
-          logfile << "Menu::init failed: CreateDXGIFactory1 failed" << std::endl;
-      }
-      return false;
-    }
+    D3D_FEATURE_LEVEL       featureLevel;
+    const D3D_FEATURE_LEVEL featureLevels[] = {D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0};
 
-    IDXGIAdapter* adapter;
-    if (FAILED(factory->EnumAdapters(0, &adapter))) {
-      {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-        if (logfile.is_open())
-          logfile << "Menu::init failed: EnumAdapters failed" << std::endl;
-      }
-      return false;
-    }
+    DXGI_SWAP_CHAIN_DESC swapChainDesc;
+    ZeroMemory(&swapChainDesc, sizeof(swapChainDesc));
+    swapChainDesc.BufferCount                 = 1;
+    swapChainDesc.BufferDesc.Format           = DXGI_FORMAT_R8G8B8A8_UNORM;
+    swapChainDesc.BufferUsage                 = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    swapChainDesc.OutputWindow                = window;
+    swapChainDesc.SampleDesc.Count            = 1;
+    swapChainDesc.Windowed                    = TRUE;
+    swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+    swapChainDesc.BufferDesc.Scaling          = DXGI_MODE_SCALING_UNSPECIFIED;
+    swapChainDesc.SwapEffect                  = DXGI_SWAP_EFFECT_DISCARD;
 
-    ID3D12Device* device;
-    if (FAILED(D3D12CreateDevice_Func(adapter, D3D_FEATURE_LEVEL_11_0, __uuidof(ID3D12Device), (void**) &device))) {
-      {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-        if (logfile.is_open())
-          logfile << "Menu::init failed: D3D12CreateDevice failed" << std::endl;
-      }
-      return false;
-    }
+    ID3D11Device*        dummyDevice          = nullptr;
+    ID3D11DeviceContext* dummyContext         = nullptr;
+    IDXGISwapChain*      dummySwapChain       = nullptr;
 
-    D3D12_COMMAND_QUEUE_DESC queueDesc;
-    queueDesc.Type     = D3D12_COMMAND_LIST_TYPE_DIRECT;
-    queueDesc.Priority = 0;
-    queueDesc.Flags    = D3D12_COMMAND_QUEUE_FLAG_NONE;
-    queueDesc.NodeMask = 0;
-
-    ID3D12CommandQueue* commandQueue;
-    if (FAILED(device->CreateCommandQueue(&queueDesc, __uuidof(ID3D12CommandQueue), (void**) &commandQueue))) {
-      {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-        if (logfile.is_open())
-          logfile << "Menu::init failed: CreateCommandQueue failed" << std::endl;
-      }
-      return false;
-    }
-
-    DXGI_SWAP_CHAIN_DESC1 swapChainDesc1 = {};
-    swapChainDesc1.Width                 = 100;
-    swapChainDesc1.Height                = 100;
-    swapChainDesc1.Format                = DXGI_FORMAT_R8G8B8A8_UNORM;
-    swapChainDesc1.SampleDesc.Count      = 1;
-    swapChainDesc1.BufferUsage           = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    swapChainDesc1.BufferCount           = 2;
-    swapChainDesc1.SwapEffect            = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-
-    IDXGISwapChain1* swapChain1          = nullptr;
     if (
-      SUCCEEDED(factory->CreateSwapChainForHwnd(commandQueue, window, &swapChainDesc1, nullptr, nullptr, &swapChain1))
+      FAILED(D3D11CreateDeviceAndSwapChain_Func(
+        nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, featureLevels, 3, D3D11_SDK_VERSION, &swapChainDesc,
+        &dummySwapChain, &dummyDevice, &featureLevel, &dummyContext
+      ))
     ) {
-      {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-        if (logfile.is_open())
-          logfile << "Created swap chain, getting vtable" << std::endl;
-      }
-      void** swapChainVTable = *reinterpret_cast<void***>(swapChain1);
-
-      {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-        if (logfile.is_open())
-          logfile << "Hooking Present (Index 8)" << std::endl;
-      }
-      MH_CreateHook(swapChainVTable[8], (void*) &hkPresent, (void**) &oPresent);
-      MH_EnableHook(swapChainVTable[8]);
-
-      {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-        if (logfile.is_open())
-          logfile << "Hooking Present1 (Index 22)" << std::endl;
-      }
-      MH_CreateHook(swapChainVTable[22], (void*) &hkPresent1, (void**) &oPresent1);
-      MH_EnableHook(swapChainVTable[22]);
-
-      {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-        if (logfile.is_open())
-          logfile << "Releasing swap chain" << std::endl;
-      }
-      // swapChain1->Release();
-    }
-    else {
-      {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-        if (logfile.is_open())
-          logfile << "Menu::init failed: CreateSwapChainForHwnd failed" << std::endl;
-      }
+      ::DestroyWindow(window);
+      ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+      return false;
     }
 
-    {
-      std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-      if (logfile.is_open())
-        logfile << "Hooking ExecuteCommandLists (Index 10)" << std::endl;
-    }
-    void** commandQueueVTable = *reinterpret_cast<void***>(commandQueue);
-    MH_CreateHook(commandQueueVTable[10], (void*) &hkExecuteCommandLists, (void**) &oExecuteCommandLists);
-    MH_EnableHook(commandQueueVTable[10]);
+    void** pVTable = *reinterpret_cast<void***>(dummySwapChain);
+    MH_CreateHook(pVTable[8], (void*) &hkPresent, (void**) &oPresent);
+    MH_EnableHook(pVTable[8]);
+    MH_CreateHook(pVTable[22], (void*) &hkPresent1, (void**) &oPresent1);
+    MH_EnableHook(pVTable[22]);
 
-    {
-      std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
-      if (logfile.is_open())
-        logfile << "Hooks set, releasing resources" << std::endl;
+    // DX12 Dummy creation to hook ExecuteCommandLists (Index 54 in ID3D12CommandQueue)
+    HMODULE libDXGI  = GetModuleHandle("dxgi.dll");
+    HMODULE libD3D12 = GetModuleHandle("d3d12.dll");
+    if (libDXGI && libD3D12) {
+      auto CreateDXGIFactory1_Func = (decltype(&CreateDXGIFactory1)) GetProcAddress(libDXGI, "CreateDXGIFactory1");
+      auto D3D12CreateDevice_Func  = (decltype(&::D3D12CreateDevice)) GetProcAddress(libD3D12, "D3D12CreateDevice");
+
+      if (CreateDXGIFactory1_Func && D3D12CreateDevice_Func) {
+        IDXGIFactory4* factory;
+        if (SUCCEEDED(CreateDXGIFactory1_Func(__uuidof(IDXGIFactory4), (void**) &factory))) {
+          IDXGIAdapter* adapter;
+          if (SUCCEEDED(factory->EnumAdapters(0, &adapter))) {
+            ID3D12Device* device;
+            if (
+              SUCCEEDED(
+                D3D12CreateDevice_Func(adapter, D3D_FEATURE_LEVEL_11_0, __uuidof(ID3D12Device), (void**) &device)
+              )
+            ) {
+              D3D12_COMMAND_QUEUE_DESC queueDesc;
+              queueDesc.Type     = D3D12_COMMAND_LIST_TYPE_DIRECT;
+              queueDesc.Priority = 0;
+              queueDesc.Flags    = D3D12_COMMAND_QUEUE_FLAG_NONE;
+              queueDesc.NodeMask = 0;
+
+              ID3D12CommandQueue* commandQueue;
+              if (
+                SUCCEEDED(device->CreateCommandQueue(&queueDesc, __uuidof(ID3D12CommandQueue), (void**) &commandQueue))
+              ) {
+                void** commandQueueVTable = *reinterpret_cast<void***>(commandQueue);
+                MH_CreateHook(commandQueueVTable[10], (void*) &hkExecuteCommandLists, (void**) &oExecuteCommandLists);
+                MH_EnableHook(commandQueueVTable[10]);
+                commandQueue->Release();
+              }
+              device->Release();
+            }
+            adapter->Release();
+          }
+          factory->Release();
+        }
+      }
     }
-    // commandQueue->Release();
-    // device->Release();
-    // adapter->Release();
+
+    dummyDevice->Release();
+    dummyContext->Release();
+    dummySwapChain->Release();
     ::DestroyWindow(window);
     ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
 
-    // Play a beep so we know Menu::init successfully finished and hooked DX12
     Beep(750, 300);
-
     return true;
   }
 
   void shutdown()
   {
     if (g_ImGuiInitialized) {
-      ImGui_ImplDX12_Shutdown();
+      if (g_IsDX11) {
+        ImGui_ImplDX11_Shutdown();
+      }
+      else if (g_IsDX12) {
+        ImGui_ImplDX12_Shutdown();
+      }
       ImGui_ImplWin32_Shutdown();
       ImGui::DestroyContext();
     }
