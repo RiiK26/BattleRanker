@@ -1,0 +1,9 @@
+{
+	"project_name": "BattleRankerInternalCheat",
+	"game_version": "30.0.10",
+	"game_assembly_path": "BattleRanker_Data/Managed/Assembly-CSharp.dll",
+	"game_path": "SteamLibrary/steamapps/common/BattleRanker",
+	"game_assembly": "Assembly-CSharp.dll",
+	"anticheat": "ACTk.Runtime.dll",
+	"signatures": []
+}
