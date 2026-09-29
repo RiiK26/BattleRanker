@@ -8,9 +8,9 @@
 void MainThread(HMODULE hModule)
 {
   {
-    std::ofstream logfile("BattleRanker_Debug_Log.txt", std::ios::trunc);
+    std::ofstream logfile("BattleRanker_Log.txt", std::ios::trunc);
     if (logfile.is_open())
-      logfile << "Cheat Thread Started" << std::endl;
+      logfile << "Thread Started" << std::endl;
   }
 
   // Wait for the game to initialize
@@ -19,7 +19,7 @@ void MainThread(HMODULE hModule)
   }
 
   {
-    std::ofstream logfile("BattleRanker_DebugApp_Log.txt", std::ios::app);
+    std::ofstream logfile("BattleRanker_Log.txt", std::ios::app);
     if (logfile.is_open())
       logfile << "Mono loaded" << std::endl;
   }
@@ -42,11 +42,11 @@ void MainThread(HMODULE hModule)
   if (!dxgiLoaded || (!d3d11Loaded && !d3d12Loaded)) {
     char errorMsg[256];
     sprintf(
-      errorMsg, "Graphics API wait timed out!\ndxgi.dll loaded: %s\nd3d11.dll loaded: %s\nd3d12.dll loaded: %s", dxgiLoaded ? "Yes" : "No",
-      d3d11Loaded ? "Yes" : "No", d3d12Loaded ? "Yes" : "No"
+      errorMsg, "Graphics API wait timed out!\ndxgi.dll loaded: %s\nd3d11.dll loaded: %s\nd3d12.dll loaded: %s",
+      dxgiLoaded ? "Yes" : "No", d3d11Loaded ? "Yes" : "No", d3d12Loaded ? "Yes" : "No"
     );
     {
-      std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
+      std::ofstream logfile("BattleRanker_Log.txt", std::ios::app);
       if (logfile.is_open())
         logfile << errorMsg << std::endl;
     }
@@ -54,7 +54,7 @@ void MainThread(HMODULE hModule)
   }
   else {
     {
-      std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
+      std::ofstream logfile("BattleRanker_Log.txt", std::ios::app);
       if (logfile.is_open())
         logfile << "DXGI and D3D12 loaded successfully!" << std::endl;
     }
@@ -65,13 +65,13 @@ void MainThread(HMODULE hModule)
 
   if (mono::init()) {
     {
-      std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
+      std::ofstream logfile("BattleRanker_Log.txt", std::ios::app);
       if (logfile.is_open())
         logfile << "mono::init success, calling Hooks::init" << std::endl;
     }
     Hooks::init();
     {
-      std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
+      std::ofstream logfile("BattleRanker_Log.txt", std::ios::app);
       if (logfile.is_open())
         logfile << "Hooks::init success, calling Menu::init" << std::endl;
     }
@@ -79,7 +79,7 @@ void MainThread(HMODULE hModule)
   }
   else {
     {
-      std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
+      std::ofstream logfile("BattleRanker_Log.txt", std::ios::app);
       if (logfile.is_open())
         logfile << "Failed to initialize Mono Utils." << std::endl;
     }

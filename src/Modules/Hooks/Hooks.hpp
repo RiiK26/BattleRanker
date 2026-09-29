@@ -7,7 +7,7 @@
 
 #define HOOK_SIGNATURE(Name, SignaturePtr, HookFunc, OrigFunc) \
   { \
-    std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app); \
+    std::ofstream logfile("BattleRanker_Log.txt", std::ios::app); \
     if (logfile.is_open()) \
       logfile << "Hooking: " << Name << " -> " << (SignaturePtr ? "FOUND" : "NOT FOUND") << std::endl; \
   } \

@@ -245,6 +245,7 @@ namespace Menu
 
         if (ImGui::BeginTabBar("Tabs")) {
           if (ImGui::BeginTabItem("Player")) {
+            ImGui::BeginChild("PlayerContent", ImVec2(0, -95), true);
             ImGui::Spacing();
             ImGui::Text("Base Stats & Godmode");
             if (ImGui::Checkbox("Enable Invincibility", &Config.bGodMode_Invincibility)) {
@@ -309,9 +310,11 @@ namespace Menu
 
             ImGui::Columns(1);
             ImGui::Spacing();
+            ImGui::EndChild();
             ImGui::EndTabItem();
           }
           if (ImGui::BeginTabItem("Currency")) {
+            ImGui::BeginChild("CurrencyContent", ImVec2(0, -95), true);
             ImGui::Spacing();
             if (ImGui::Checkbox("Infinite Currency (Never Subtract)", &Config.bInfiniteCurrency)) {
               SetLogMessage("Infinite Currency toggled.");
@@ -321,175 +324,98 @@ namespace Menu
             ImGui::Spacing();
             ImGui::Text("Override Currency Amount");
 
-            // Gold
-            if (ImGui::Button("Set##Gold")) {
-              Config.bRequestSetGold = true;
-              SetLogMessage("Set Gold requested.");
-            }
-            ImGui::SameLine(150);
-            ImGui::InputInt("##SetGold", &Config.iSetGoldValue);
+            auto renderCurrencyRow =
+              [](const char* label, const char* id, const char* message, bool& request, int& value) {
+                ImGui::TextUnformatted(label);
+                ImGui::SameLine(150);
+                if (ImGui::Button((std::string("Set##") + id).c_str())) {
+                  request = true;
+                  SetLogMessage(message);
+                }
+                ImGui::SameLine();
+                ImGui::InputInt((std::string("##") + id).c_str(), &value, 0, 0);
+              };
 
-            // Cryptobit (was Ruby)
-            if (ImGui::Button("Set##Cryptobit")) {
-              Config.bRequestSetCryptobit = true;
-              SetLogMessage("Set Cryptobit requested.");
-            }
-            ImGui::SameLine(150);
-            ImGui::InputInt("##SetCryptobit", &Config.iSetCryptobitValue);
-
-            // Diamond (was Jewel)
-            if (ImGui::Button("Set##Diamond")) {
-              Config.bRequestSetDiamond = true;
-              SetLogMessage("Set Diamond requested.");
-            }
-            ImGui::SameLine(150);
-            ImGui::InputInt("##SetDiamond", &Config.iSetDiamondValue);
-
-            // Skill Ticket
-            if (ImGui::Button("Set##SkillTicket")) {
-              Config.bRequestSetSkillTicket = true;
-              SetLogMessage("Set Skill Ticket requested.");
-            }
-            ImGui::SameLine(150);
-            ImGui::InputInt("##SetSkillTicket", &Config.iSetSkillTicketValue);
-
-            // Chance Ticket
-            if (ImGui::Button("Set##ChanceTicket")) {
-              Config.bRequestSetChanceTicket = true;
-              SetLogMessage("Set Chance Ticket requested.");
-            }
-            ImGui::SameLine(150);
-            ImGui::InputInt("##SetChanceTicket", &Config.iSetChanceTicketValue);
-
-            // Pickup Ticket
-            if (ImGui::Button("Set##PickupTicket")) {
-              Config.bRequestSetPickupTicket = true;
-              SetLogMessage("Set Pickup Ticket requested.");
-            }
-            ImGui::SameLine(150);
-            ImGui::InputInt("##SetPickupTicket", &Config.iSetPickupTicketValue);
-
-            // Mileage
-            if (ImGui::Button("Set##Mileage")) {
-              Config.bRequestSetMileage = true;
-              SetLogMessage("Set Mileage requested.");
-            }
-            ImGui::SameLine(150);
-            ImGui::InputInt("##SetMileage", &Config.iSetMileageValue);
-
-            // Golden Dice
-            if (ImGui::Button("Set##GoldenDice")) {
-              Config.bRequestSetGoldenDice = true;
-              SetLogMessage("Set Golden Dice requested.");
-            }
-            ImGui::SameLine(150);
-            ImGui::InputInt("##SetGoldenDice", &Config.iSetGoldenDiceValue);
-
-            // Lucky Dice (Internal: Option Dice)
-            if (ImGui::Button("Set##LuckyDice")) {
-              Config.bRequestSetLuckyDice = true;
-              SetLogMessage("Set Lucky Dice requested.");
-            }
-            ImGui::SameLine(150);
-            ImGui::InputInt("##SetOptionDice", &Config.iSetOptionDiceValue);
-
-            // Skill Dice
-            if (ImGui::Button("Set##SkillDice")) {
-              Config.bRequestSetSkillDice = true;
-              SetLogMessage("Set Skill Dice requested.");
-            }
-            ImGui::SameLine(150);
-            ImGui::InputInt("##SetSkillDice", &Config.iSetSkillDiceValue);
-
-            // Quantum Orb
-            if (ImGui::Button("Set##QuantumOrb")) {
-              Config.bRequestSetQuantumOrb = true;
-              SetLogMessage("Set Quantum Orb requested.");
-            }
-            ImGui::SameLine(150);
-            ImGui::InputInt("##SetQuantumOrb", &Config.iSetQuantumOrbValue);
-
-            // Candela
-            if (ImGui::Button("Set##Candela")) {
-              Config.bRequestSetCandela = true;
-              SetLogMessage("Set Candela requested.");
-            }
-            ImGui::SameLine(150);
-            ImGui::InputInt("##SetCandela", &Config.iSetCandelaValue);
-
-            // CP
-            if (ImGui::Button("Set##CP")) {
-              Config.bRequestSetCP = true;
-              SetLogMessage("Set CP requested.");
-            }
-            ImGui::SameLine(150);
-            ImGui::InputInt("##SetCP", &Config.iSetCPValue);
-
-            // Cores
-            if (ImGui::Button("Set##TreeCore")) {
-              Config.bRequestSetTreeCore = true;
-              SetLogMessage("Set Tree Core requested.");
-            }
-            ImGui::SameLine(150);
-            ImGui::InputInt("##SetTreeCore", &Config.iSetTreeCoreValue);
-
-            if (ImGui::Button("Set##FireCore")) {
-              Config.bRequestSetFireCore = true;
-              SetLogMessage("Set Fire Core requested.");
-            }
-            ImGui::SameLine(150);
-            ImGui::InputInt("##SetFireCore", &Config.iSetFireCoreValue);
-
-            if (ImGui::Button("Set##WaterCore")) {
-              Config.bRequestSetWaterCore = true;
-              SetLogMessage("Set Water Core requested.");
-            }
-            ImGui::SameLine(150);
-            ImGui::InputInt("##SetWaterCore", &Config.iSetWaterCoreValue);
-
-            if (ImGui::Button("Set##LightCore")) {
-              Config.bRequestSetLightCore = true;
-              SetLogMessage("Set Light Core requested.");
-            }
-            ImGui::SameLine(150);
-            ImGui::InputInt("##SetLightCore", &Config.iSetLightCoreValue);
-
-            // Arena Ticket
-            if (ImGui::Button("Set##ArenaTicket")) {
-              Config.bRequestSetArenaTicket = true;
-              SetLogMessage("Set Arena Ticket requested.");
-            }
-            ImGui::SameLine(150);
-            ImGui::InputInt("##SetArenaTicket", &Config.iSetArenaTicketValue);
-
-            // Quantum Ring
-            if (ImGui::Button("Set##QuantumRing")) {
-              Config.bRequestSetQuantumRing = true;
-              SetLogMessage("Set Quantum Ring requested.");
-            }
-            ImGui::SameLine(150);
-            ImGui::InputInt("##SetQuantumRing", &Config.iSetQuantumRingValue);
-
-            // Poly Fiber
-            if (ImGui::Button("Set##PolyFiber")) {
-              Config.bRequestSetPolyFiber = true;
-              SetLogMessage("Set Poly Fiber requested.");
-            }
-            ImGui::SameLine(150);
-            ImGui::InputInt("##SetPolyFiber", &Config.iSetPolyFiberValue);
-
-            // Dungeon Keys
-            if (ImGui::Button("Set##AllKeys")) {
-              Config.bRequestSetKeys = true;
-              SetLogMessage("Set All Dungeon Keys requested.");
-            }
-            ImGui::SameLine(150);
-            ImGui::InputInt("##SetKeys", &Config.iSetKeysValue);
+            renderCurrencyRow("Gold", "Gold", "Set Gold requested.", Config.bRequestSetGold, Config.iSetGoldValue);
+            renderCurrencyRow(
+              "Cryptobit", "Cryptobit", "Set Cryptobit requested.", Config.bRequestSetCryptobit,
+              Config.iSetCryptobitValue
+            );
+            renderCurrencyRow(
+              "Diamond", "Diamond", "Set Diamond requested.", Config.bRequestSetDiamond, Config.iSetDiamondValue
+            );
+            renderCurrencyRow(
+              "Skill Ticket", "SkillTicket", "Set Skill Ticket requested.", Config.bRequestSetSkillTicket,
+              Config.iSetSkillTicketValue
+            );
+            renderCurrencyRow(
+              "Chance Ticket", "ChanceTicket", "Set Chance Ticket requested.", Config.bRequestSetChanceTicket,
+              Config.iSetChanceTicketValue
+            );
+            renderCurrencyRow(
+              "Pickup Ticket", "PickupTicket", "Set Pickup Ticket requested.", Config.bRequestSetPickupTicket,
+              Config.iSetPickupTicketValue
+            );
+            renderCurrencyRow(
+              "Mileage", "Mileage", "Set Mileage requested.", Config.bRequestSetMileage, Config.iSetMileageValue
+            );
+            renderCurrencyRow(
+              "Golden Dice", "GoldenDice", "Set Golden Dice requested.", Config.bRequestSetGoldenDice,
+              Config.iSetGoldenDiceValue
+            );
+            renderCurrencyRow(
+              "Lucky Dice", "LuckyDice", "Set Lucky Dice requested.", Config.bRequestSetLuckyDice,
+              Config.iSetOptionDiceValue
+            );
+            renderCurrencyRow(
+              "Skill Dice", "SkillDice", "Set Skill Dice requested.", Config.bRequestSetSkillDice,
+              Config.iSetSkillDiceValue
+            );
+            renderCurrencyRow(
+              "Quantum Orb", "QuantumOrb", "Set Quantum Orb requested.", Config.bRequestSetQuantumOrb,
+              Config.iSetQuantumOrbValue
+            );
+            renderCurrencyRow(
+              "Candela", "Candela", "Set Candela requested.", Config.bRequestSetCandela, Config.iSetCandelaValue
+            );
+            renderCurrencyRow("CP", "CP", "Set CP requested.", Config.bRequestSetCP, Config.iSetCPValue);
+            renderCurrencyRow(
+              "Tree Core", "TreeCore", "Set Tree Core requested.", Config.bRequestSetTreeCore, Config.iSetTreeCoreValue
+            );
+            renderCurrencyRow(
+              "Fire Core", "FireCore", "Set Fire Core requested.", Config.bRequestSetFireCore, Config.iSetFireCoreValue
+            );
+            renderCurrencyRow(
+              "Water Core", "WaterCore", "Set Water Core requested.", Config.bRequestSetWaterCore,
+              Config.iSetWaterCoreValue
+            );
+            renderCurrencyRow(
+              "Light Core", "LightCore", "Set Light Core requested.", Config.bRequestSetLightCore,
+              Config.iSetLightCoreValue
+            );
+            renderCurrencyRow(
+              "Arena Ticket", "ArenaTicket", "Set Arena Ticket requested.", Config.bRequestSetArenaTicket,
+              Config.iSetArenaTicketValue
+            );
+            renderCurrencyRow(
+              "Quantum Ring", "QuantumRing", "Set Quantum Ring requested.", Config.bRequestSetQuantumRing,
+              Config.iSetQuantumRingValue
+            );
+            renderCurrencyRow(
+              "Poly Fiber", "PolyFiber", "Set Poly Fiber requested.", Config.bRequestSetPolyFiber,
+              Config.iSetPolyFiberValue
+            );
+            renderCurrencyRow(
+              "All Dungeon Keys", "AllKeys", "Set All Dungeon Keys requested.", Config.bRequestSetKeys,
+              Config.iSetKeysValue
+            );
 
             ImGui::Spacing();
+            ImGui::EndChild();
             ImGui::EndTabItem();
           }
           if (ImGui::BeginTabItem("Misc")) {
+            ImGui::BeginChild("MiscContent", ImVec2(0, -95), true);
             ImGui::Spacing();
             ImGui::Text("Summon & Options");
             if (ImGui::Checkbox("Max Gacha Rolls", &Config.bMaxGachaRolls)) {
@@ -509,24 +435,19 @@ namespace Menu
               SetLogMessage("Aura Kill toggled.");
             }
             ImGui::Spacing();
+            ImGui::EndChild();
             ImGui::EndTabItem();
           }
           ImGui::EndTabBar();
         }
 
-        ImGui::Spacing();
         ImGui::Separator();
         ImGui::Spacing();
-
         if (ImGui::Button("SAVE CONFIG", ImVec2(-1, 30))) {
           SetLogMessage("Saved config successfully!");
         }
 
         ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
-
-        // Footer for info
         if (g_LogMessage == "[INSERT] to show/hide menu") {
           ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%s", g_LogMessage.c_str());
         }
@@ -576,7 +497,7 @@ namespace Menu
     static bool firstCallPresent = true;
     if (firstCallPresent) {
       {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
+        std::ofstream logfile("BattleRanker_Log.txt", std::ios::app);
         if (logfile.is_open())
           logfile << "hkPresent (Index 8) called for the first time!" << std::endl;
       }
@@ -597,7 +518,7 @@ namespace Menu
     static bool firstCallPresent1 = true;
     if (firstCallPresent1) {
       {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
+        std::ofstream logfile("BattleRanker_Log.txt", std::ios::app);
         if (logfile.is_open())
           logfile << "hkPresent1 (Index 22) called for the first time!" << std::endl;
       }
@@ -607,7 +528,7 @@ namespace Menu
     {
       static bool firstCallEnd = true;
       if (firstCallEnd) {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
+        std::ofstream logfile("BattleRanker_Log.txt", std::ios::app);
         if (logfile.is_open())
           logfile << "hkPresent1: RenderMenu finished, calling oPresent1" << std::endl;
         firstCallEnd = false;
@@ -623,7 +544,7 @@ namespace Menu
     static bool firstCallCmd = true;
     if (firstCallCmd) {
       {
-        std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
+        std::ofstream logfile("BattleRanker_Log.txt", std::ios::app);
         if (logfile.is_open())
           logfile << "hkExecuteCommandLists called for the first time!" << std::endl;
       }

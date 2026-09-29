@@ -89,6 +89,8 @@ namespace Signatures
   void* GearBoxScript_GetRandomPickLv                             = nullptr;
   void* GearBoxScript_GetActualSkillGrade                         = nullptr;
   void* GearBoxScript_SubActualSkinPull                           = nullptr;
+  void* SkillV3Info_get_SkillGrade                                = nullptr;
+  void* InvenCeremObject_ctor                                     = nullptr;
 
   void Resolve()
   {
@@ -200,11 +202,12 @@ namespace Signatures
     ACTk_WallHackDetector_StartDetectionAutomatically =
       mono::get_method(actk_dll, actk_ns, "WallHackDetector", method, 0);
 
-    MonsterV2Script_Update        = mono::get_method("Assembly-CSharp", "", "MonsterV2Script", "Update", 0);
-    MonsterV2Script_InstantDeath  = mono::get_method("Assembly-CSharp", "", "MonsterV2Script", "InstantDeath", 0);
-    MonsterV2Script_get_IsDead    = mono::get_method("Assembly-CSharp", "", "MonsterV2Script", "get_IsDead", 0);
-    MonsterV2Script_get_IsPuppet  = mono::get_method("Assembly-CSharp", "", "MonsterV2Script", "get_IsPuppet", 0);
-    MonsterV2Script_get_IsTargetable = mono::get_method("Assembly-CSharp", "", "MonsterV2Script", "get_IsTargetable", 0);
+    MonsterV2Script_Update       = mono::get_method("Assembly-CSharp", "", "MonsterV2Script", "Update", 0);
+    MonsterV2Script_InstantDeath = mono::get_method("Assembly-CSharp", "", "MonsterV2Script", "InstantDeath", 0);
+    MonsterV2Script_get_IsDead   = mono::get_method("Assembly-CSharp", "", "MonsterV2Script", "get_IsDead", 0);
+    MonsterV2Script_get_IsPuppet = mono::get_method("Assembly-CSharp", "", "MonsterV2Script", "get_IsPuppet", 0);
+    MonsterV2Script_get_IsTargetable =
+      mono::get_method("Assembly-CSharp", "", "MonsterV2Script", "get_IsTargetable", 0);
 
     GDOptionScript_PullOneOption  = mono::get_method("Assembly-CSharp", "", "GDOptionScript", "PullOneOption", 2);
     RPGOptionItem_set_OptionGrade = mono::get_method("Assembly-CSharp", "", "RPGOptionItem", "set_OptionGrade", 1);
@@ -213,5 +216,7 @@ namespace Signatures
     GearBoxScript_GetActualSkillGrade =
       mono::get_method("Assembly-CSharp", "", "GearBoxScript", "GetActualSkillGrade", 1);
     GearBoxScript_SubActualSkinPull = mono::get_method("Assembly-CSharp", "", "GearBoxScript", "SubActualSkinPull", 3);
+    SkillV3Info_get_SkillGrade      = mono::get_method("Assembly-CSharp", "", "SkillV3Info", "get_SkillGrade", 0);
+    InvenCeremObject_ctor           = mono::get_method("Assembly-CSharp", "", "InvenCeremObject", ".ctor", 4);
   }
 }  // namespace Signatures

@@ -87,7 +87,7 @@ namespace mono
   {
     MonoDomain* domain = mono_get_root_domain();
     if (!domain) {
-      std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
+      std::ofstream logfile("BattleRanker_Log.txt", std::ios::app);
       if (logfile.is_open())
         logfile << "get_method: mono_get_root_domain failed for " << class_name << std::endl;
       return nullptr;
@@ -108,7 +108,7 @@ namespace mono
         if (!assembly) {
           static std::set<std::string> logged_assemblies;
           if (logged_assemblies.find(assembly_name) == logged_assemblies.end()) {
-            std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
+            std::ofstream logfile("BattleRanker_Log.txt", std::ios::app);
             if (logfile.is_open()) {
               logfile << "get_method: mono_domain_assembly_open failed for " << assembly_name << " and all fallbacks."
                       << std::endl;
@@ -122,7 +122,7 @@ namespace mono
 
     MonoImage* image = mono_assembly_get_image(assembly);
     if (!image) {
-      std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
+      std::ofstream logfile("BattleRanker_Log.txt", std::ios::app);
       if (logfile.is_open())
         logfile << "get_method: mono_assembly_get_image failed for " << assembly_name << std::endl;
       return nullptr;
@@ -130,7 +130,7 @@ namespace mono
 
     MonoClass* klass = mono_class_from_name(image, name_space.c_str(), class_name.c_str());
     if (!klass) {
-      std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
+      std::ofstream logfile("BattleRanker_Log.txt", std::ios::app);
       if (logfile.is_open())
         logfile << "get_method: mono_class_from_name failed for " << class_name << std::endl;
       return nullptr;
@@ -145,7 +145,7 @@ namespace mono
     }
 
     if (!method) {
-      std::ofstream logfile("BattleRanker_Cheat_Log.txt", std::ios::app);
+      std::ofstream logfile("BattleRanker_Log.txt", std::ios::app);
       if (logfile.is_open()) {
         logfile << "get_method: mono_class_get_method_from_name failed for " << method_name << std::endl;
         if (mono_class_get_methods && mono_method_get_name) {

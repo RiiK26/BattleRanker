@@ -91,6 +91,8 @@ namespace Signatures
   extern void* GearBoxScript_GetRandomPickLv;
   extern void* GearBoxScript_GetActualSkillGrade;
   extern void* GearBoxScript_SubActualSkinPull;
+  extern void* SkillV3Info_get_SkillGrade;
+  extern void* InvenCeremObject_ctor;
 
   void Resolve();
 }  // namespace Signatures

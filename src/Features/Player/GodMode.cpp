@@ -80,12 +80,45 @@ namespace Features
     }
 
     int (*Orig_GearBoxScript_GetActualSkillGrade)(void* this_ptr, bool isPickup, void* method_info);
+    bool  g_MaxSkillGradePending = false;
+    void* g_MaxSkillInfo         = nullptr;
+
     int Hook_GearBoxScript_GetActualSkillGrade(void* this_ptr, bool isPickup, void* method_info)
     {
-      if (Menu::Config.bMaxGachaRolls) {
-        return 3;  // 3 = Legend
+      const int grade        = Orig_GearBoxScript_GetActualSkillGrade(this_ptr, isPickup, method_info);
+      g_MaxSkillGradePending = Menu::Config.bMaxGachaRolls;
+      g_MaxSkillInfo         = nullptr;
+      return grade;
+    }
+
+    int (*Orig_SkillV3Info_get_SkillGrade)(void* this_ptr, void* method_info);
+    int Hook_SkillV3Info_get_SkillGrade(void* this_ptr, void* method_info)
+    {
+      const int grade = Orig_SkillV3Info_get_SkillGrade(this_ptr, method_info);
+      if (g_MaxSkillGradePending) {
+        g_MaxSkillGradePending = false;
+        g_MaxSkillInfo         = this_ptr;
+        return 3;
       }
-      return Orig_GearBoxScript_GetActualSkillGrade(this_ptr, isPickup, method_info);
+      if (g_MaxSkillInfo == this_ptr)
+        return 3;
+      return grade;
+    }
+
+    void (*Orig_InvenCeremObject_ctor)(
+      void* this_ptr, void* itemIcon, int itemLv, int itemAmount, int gradeIndex, void* method_info
+    );
+    void Hook_InvenCeremObject_ctor(
+      void* this_ptr, void* itemIcon, int itemLv, int itemAmount, int gradeIndex, void* method_info
+    )
+    {
+      if (Menu::Config.bMaxGachaRolls) {
+        if (itemLv >= 7)
+          itemLv = 6;
+        if (gradeIndex >= 3)
+          gradeIndex = 2;
+      }
+      Orig_InvenCeremObject_ctor(this_ptr, itemIcon, itemLv, itemAmount, gradeIndex, method_info);
     }
 
     void (*Orig_GearBoxScript_SubActualSkinPull)(
@@ -141,6 +174,14 @@ namespace Features
       HOOK_SIGNATURE(
         "GearBoxScript::GetActualSkillGrade", Signatures::GearBoxScript_GetActualSkillGrade,
         Hook_GearBoxScript_GetActualSkillGrade, Orig_GearBoxScript_GetActualSkillGrade
+      );
+      HOOK_SIGNATURE(
+        "SkillV3Info::get_SkillGrade", Signatures::SkillV3Info_get_SkillGrade, Hook_SkillV3Info_get_SkillGrade,
+        Orig_SkillV3Info_get_SkillGrade
+      );
+      HOOK_SIGNATURE(
+        "InvenCeremObject::.ctor", Signatures::InvenCeremObject_ctor, Hook_InvenCeremObject_ctor,
+        Orig_InvenCeremObject_ctor
       );
       HOOK_SIGNATURE(
         "GearBoxScript::SubActualSkinPull", Signatures::GearBoxScript_SubActualSkinPull,
