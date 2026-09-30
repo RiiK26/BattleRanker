@@ -235,8 +235,11 @@ namespace Menu
       Features::SetCurrency::ProcessRequests();
 
       if (g_ShowMenu) {
-        ImGui::SetNextWindowSizeConstraints(ImVec2(500, 400), ImVec2(800, 600));
-        ImGui::Begin("BattleRanker Cheat", &g_ShowMenu, ImGuiWindowFlags_NoCollapse);
+        ImGui::SetNextWindowSizeConstraints(ImVec2(300, 300), ImVec2(500, 400));
+        ImGui::Begin(
+          "BattleRanker Cheat", &g_ShowMenu,
+          ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse
+        );
 
         // Auto-clear log message after 3 seconds
         if (GetTickCount64() - g_LogTimer > 3000) {
@@ -245,7 +248,7 @@ namespace Menu
 
         if (ImGui::BeginTabBar("Tabs")) {
           if (ImGui::BeginTabItem("Player")) {
-            ImGui::BeginChild("PlayerContent", ImVec2(0, -95), true);
+            ImGui::BeginChild("PlayerContent", ImVec2(0, -60.0f), true);
             ImGui::Spacing();
             ImGui::Text("Base Stats & Godmode");
             if (ImGui::Checkbox("Enable Invincibility", &Config.bGodMode_Invincibility)) {
@@ -314,9 +317,9 @@ namespace Menu
             ImGui::EndTabItem();
           }
           if (ImGui::BeginTabItem("Currency")) {
-            ImGui::BeginChild("CurrencyContent", ImVec2(0, -95), true);
+            ImGui::BeginChild("CurrencyContent", ImVec2(0, -60.0f), true);
             ImGui::Spacing();
-            if (ImGui::Checkbox("Infinite Currency (Never Subtract)", &Config.bInfiniteCurrency)) {
+            if (ImGui::Checkbox("Infinite Currency", &Config.bInfiniteCurrency)) {
               SetLogMessage("Infinite Currency toggled.");
             }
             ImGui::Spacing();
@@ -406,8 +409,7 @@ namespace Menu
               Config.iSetPolyFiberValue
             );
             renderCurrencyRow(
-              "All Dungeon Keys", "AllKeys", "Set All Dungeon Keys requested.", Config.bRequestSetKeys,
-              Config.iSetKeysValue
+              "All Dungeon Keys", "AllKeys", "Set All Dungeon Keys.", Config.bRequestSetKeys, Config.iSetKeysValue
             );
 
             ImGui::Spacing();
@@ -415,7 +417,7 @@ namespace Menu
             ImGui::EndTabItem();
           }
           if (ImGui::BeginTabItem("Misc")) {
-            ImGui::BeginChild("MiscContent", ImVec2(0, -95), true);
+            ImGui::BeginChild("MiscContent", ImVec2(0, -60.0f), true);
             ImGui::Spacing();
             ImGui::Text("Summon & Options");
             if (ImGui::Checkbox("Max Gacha Rolls", &Config.bMaxGachaRolls)) {
@@ -431,7 +433,7 @@ namespace Menu
             ImGui::Spacing();
             ImGui::Separator();
             ImGui::Spacing();
-            if (ImGui::Checkbox("Aura Kill (Instant Death)", &Config.bAuraKill)) {
+            if (ImGui::Checkbox("Aura Kill", &Config.bAuraKill)) {
               SetLogMessage("Aura Kill toggled.");
             }
             ImGui::Spacing();
@@ -443,7 +445,7 @@ namespace Menu
 
         ImGui::Separator();
         ImGui::Spacing();
-        if (ImGui::Button("SAVE CONFIG", ImVec2(-1, 30))) {
+        if (ImGui::Button("SAVE CONFIG", ImVec2(-1, 20))) {
           SetLogMessage("Saved config successfully!");
         }
 

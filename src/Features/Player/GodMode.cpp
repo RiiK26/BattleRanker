@@ -30,7 +30,6 @@ namespace Features
       Orig_RPGPlayerData_set_currentHP(this_ptr, value);
     }
 
-
     void (*Orig_MonsterV2Script_Update)(void* this_ptr);
     void Hook_MonsterV2Script_Update(void* this_ptr)
     {
@@ -676,7 +675,7 @@ namespace Features
         if (*(&Config.fImpTreeDef) > 3.4e38f)
           *(&Config.fImpTreeDef) = 3.4e38f;
       }
-      ImGui::Checkbox("Set Implant HP (Total HP)", &Config.bSetImpFireHP);
+      ImGui::Checkbox("Set Imp HP", &Config.bSetImpFireHP);
       ImGui::SameLine(150);
       if (ImGui::InputFloat("##fImpFireHP", &Config.fImpFireHP)) {
         if (*(&Config.fImpFireHP) > 3.4e38f)
